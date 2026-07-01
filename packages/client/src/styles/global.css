@@ -1,0 +1,119 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f0f2f5;
+}
+
+/* LayerBoard Brand Colors */
+:root {
+  --lb-primary: #6c5ce7;
+  --lb-primary-light: #a29bfe;
+  --lb-primary-dark: #5a4bd1;
+  --lb-bg: #f8f9fc;
+  --lb-canvas-bg: #e8ecf1;
+  --lb-text: #2d3436;
+  --lb-text-secondary: #636e72;
+  --lb-border: #dfe6e9;
+  --lb-shadow: rgba(108, 92, 231, 0.1);
+  --lb-area-bg: #ffffff;
+  --lb-sticky-yellow: #ffeaa7;
+  --lb-sticky-green: #55efc4;
+  --lb-sticky-pink: #fd79a8;
+  --lb-sticky-blue: #74b9ff;
+  --lb-sticky-orange: #fab1a0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--lb-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lb-text-secondary);
+}
+
+/* Canvas cursor styles */
+.canvas-container {
+  cursor: grab;
+}
+
+.canvas-container:active {
+  cursor: grabbing;
+}
+
+/* Layer tab styles */
+.layer-tab {
+  position: relative;
+  padding: 8px 16px;
+  background: #f1f0ff;
+  border: 1px solid var(--lb-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 4px;
+}
+
+.layer-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.layer-tab:hover {
+  background: #e8e6ff;
+}
+
+.layer-tab.active {
+  background: var(--lb-area-bg);
+  border-color: var(--lb-primary-light);
+  z-index: 1;
+}
+
+.layer-tab.active::after {
+  background: var(--lb-primary);
+}
+
+/* 3D viewer */
+.three-container canvas {
+  outline: none;
+}
+
+/* Timestamp watermark */
+.timestamp-watermark {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.2);
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+  user-select: none;
+}
