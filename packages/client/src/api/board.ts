@@ -66,3 +66,25 @@ export async function updateLayerContent(
   );
   return res.data.data;
 }
+
+// ---- deleteArea ----
+export async function deleteArea(boardId: string, areaId: string) {
+  const res = await api.delete<{ data: Board }>(`/boards/${boardId}/areas/${areaId}`);
+  return res.data.data;
+}
+
+// ---- updateGroup ----
+export async function updateGroup(
+  boardId: string,
+  groupId: string,
+  data: { name?: string; color?: string }
+) {
+  const res = await api.put<{ data: Board }>(`/boards/${boardId}/groups/${groupId}`, data);
+  return res.data.data;
+}
+
+// ---- deleteGroup ----
+export async function deleteGroup(boardId: string, groupId: string) {
+  const res = await api.delete<{ data: Board }>(`/boards/${boardId}/groups/${groupId}`);
+  return res.data.data;
+}

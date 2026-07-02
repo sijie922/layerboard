@@ -76,6 +76,7 @@ export default function AreaCard({
   return (
     <Group
       ref={groupRef}
+      name={`area-${area.id}`}
       x={area.position.x}
       y={area.position.y}
       draggable

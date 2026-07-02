@@ -17,6 +17,7 @@ interface InfiniteCanvasProps {
   onAreaDragEnd: (areaId: string, pos: { x: number; y: number }) => void;
   onUpdateLayer: (areaId: string, layerId: string, content: TLayer['content']) => void;
   onAddLayer: (areaId: string) => void;
+  onContextMenu: (e: { x: number; y: number; type: 'area' | 'canvas'; areaId?: string; areaName?: string }) => void;
 }
 
 export default function InfiniteCanvas({
@@ -28,6 +29,7 @@ export default function InfiniteCanvas({
   onAreaDragEnd,
   onUpdateLayer,
   onAddLayer,
+  onContextMenu,
 }: InfiniteCanvasProps) {
   const {
     stageRef,
@@ -132,6 +134,41 @@ export default function InfiniteCanvas({
           if (e.target === e.target.getStage()) {
             onSelectArea(null);
           }
+        }}
+        onContextMenu={(e) => {
+          e.evt.preventDefault();
+          const stage = e.target.getStage();
+          const pointerPos = stage?.getPointerPosition();
+          const clientX = e.evt.clientX;
+          const clientY = e.evt.clientY;
+
+          if (e.target === stage) {
+            // Clicked on empty canvas
+            onContextMenu({ x: clientX, y: clientY, type: 'canvas' });
+            return;
+          }
+
+          // Try to find the area card group
+          let node: any = e.target;
+          while (node && node !== stage) {
+            const name = node.name?.();
+            if (name && name.startsWith('area-')) {
+              const areaId = name.slice(5);
+              const area = areas.find((a) => a.id === areaId);
+              onContextMenu({
+                x: clientX,
+                y: clientY,
+                type: 'area',
+                areaId,
+                areaName: area?.name,
+              });
+              return;
+            }
+            node = node.getParent?.();
+          }
+
+          // Fallback: canvas
+          onContextMenu({ x: clientX, y: clientY, type: 'canvas' });
         }}
       >
         <Layer>

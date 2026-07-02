@@ -192,3 +192,64 @@ export async function updateLayerContent(
   await board.save();
   return board;
 }
+
+// ---- deleteArea ----
+export async function deleteArea(
+  boardId: string,
+  userId: string,
+  areaId: string
+): Promise<IBoard | null> {
+  const board = await Board.findOne({ _id: boardId, members: userId });
+  if (!board) throw new Error('画板不存在');
+
+  const idx = board.areas.findIndex((a) => a.id === areaId);
+  if (idx === -1) throw new Error('区域不存在');
+
+  board.areas.splice(idx, 1);
+  await board.save();
+  return board;
+}
+
+// ---- updateGroup ----
+export async function updateGroup(
+  boardId: string,
+  userId: string,
+  groupId: string,
+  data: { name?: string; color?: string }
+): Promise<IBoard | null> {
+  const board = await Board.findOne({ _id: boardId, members: userId });
+  if (!board) throw new Error('画板不存在');
+
+  const group = board.groups.find((g) => g.id === groupId);
+  if (!group) throw new Error('小组不存在');
+
+  if (data.name !== undefined) group.name = data.name;
+  if (data.color !== undefined) group.color = data.color;
+
+  await board.save();
+  return board;
+}
+
+// ---- deleteGroup ----
+export async function deleteGroup(
+  boardId: string,
+  userId: string,
+  groupId: string
+): Promise<IBoard | null> {
+  const board = await Board.findOne({ _id: boardId, members: userId });
+  if (!board) throw new Error('画板不存在');
+
+  const idx = board.groups.findIndex((g) => g.id === groupId);
+  if (idx === -1) throw new Error('小组不存在');
+
+  board.groups.splice(idx, 1);
+  // Unlink areas that belonged to this group
+  board.areas.forEach((area) => {
+    if (area.groupId === groupId) {
+      area.groupId = '';
+    }
+  });
+
+  await board.save();
+  return board;
+}

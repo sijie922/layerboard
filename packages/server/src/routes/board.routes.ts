@@ -9,6 +9,9 @@ import {
   updateArea,
   addLayer,
   updateLayerContent,
+  deleteArea,
+  updateGroup,
+  deleteGroup,
 } from '../controllers/board.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { validateBody, createBoardSchema, createGroupSchema, createAreaSchema } from '../middleware/validation.middleware.js';
@@ -25,10 +28,13 @@ router.delete('/:boardId', deleteBoard);
 
 // Group routes
 router.post('/:boardId/groups', validateBody(createGroupSchema), addGroup);
+router.put('/:boardId/groups/:groupId', updateGroup);
+router.delete('/:boardId/groups/:groupId', deleteGroup);
 
 // Area routes
 router.post('/:boardId/areas', validateBody(createAreaSchema), addArea);
 router.put('/:boardId/areas/:areaId', updateArea);
+router.delete('/:boardId/areas/:areaId', deleteArea);
 
 // Layer routes
 router.post('/:boardId/areas/:areaId/layers', addLayer);

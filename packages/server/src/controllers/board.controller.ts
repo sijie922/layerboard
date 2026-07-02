@@ -114,3 +114,39 @@ export async function updateLayerContent(req: AuthRequest, res: Response): Promi
     res.status(400).json({ message });
   }
 }
+
+export async function deleteArea(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const boardId = req.params.boardId as string; const areaId = req.params.areaId as string;
+    const userId = req.user!.userId;
+    const board = await boardService.deleteArea(boardId, userId, areaId);
+    res.json({ message: '区域已删除', data: board });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '删除区域失败';
+    res.status(400).json({ message });
+  }
+}
+
+export async function updateGroup(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const boardId = req.params.boardId as string; const groupId = req.params.groupId as string;
+    const userId = req.user!.userId;
+    const board = await boardService.updateGroup(boardId, userId, groupId, req.body);
+    res.json({ message: '小组已更新', data: board });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '更新小组失败';
+    res.status(400).json({ message });
+  }
+}
+
+export async function deleteGroup(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const boardId = req.params.boardId as string; const groupId = req.params.groupId as string;
+    const userId = req.user!.userId;
+    const board = await boardService.deleteGroup(boardId, userId, groupId);
+    res.json({ message: '小组已删除', data: board });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '删除小组失败';
+    res.status(400).json({ message });
+  }
+}
