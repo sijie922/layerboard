@@ -10,6 +10,7 @@ import {
   ReloadOutlined,
   UserOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import type { Area, Layer } from '@/types';
 import { getBoard, addArea, updateArea, addLayer, updateLayerContent, addGroup } from '@/api/board';
@@ -19,6 +20,8 @@ import InfiniteCanvas from './InfiniteCanvas';
 import SearchBar, { type SearchResult } from '@/components/SearchBar/SearchBar';
 import ThreeViewer from '@/features/viewer3d/ThreeViewer';
 import ViewTransition from './ViewTransition';
+import FloatingEditor from '@/features/editor/FloatingEditor';
+import LayerManager from '@/features/editor/LayerManager';
 import { AREA_DEFAULTS, AREA_SPACING, GROUP_COLORS } from '@/utils/constants';
 
 const { Header, Content } = Layout;
@@ -27,11 +30,15 @@ export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-  const [renderedView, setRenderedView] = useState<'2d' | '3d'>('2d');
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d');
+  const [renderedView, setRenderedView] = useState<'2d' | '3d'>('3d');
   const [transitioning, setTransitioning] = useState(false);
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [areaModalOpen, setAreaModalOpen] = useState(false);
+  const [editorAreaId, setEditorAreaId] = useState<string | null>(null);
+  const [editorLayerIndex, setEditorLayerIndex] = useState(0);
+  const [layerManagerOpen, setLayerManagerOpen] = useState(false);
+  const [layerManagerAreaId, setLayerManagerAreaId] = useState<string | null>(null);
   const [groupForm] = Form.useForm();
   const [areaForm] = Form.useForm();
 
@@ -164,10 +171,84 @@ export default function BoardPage() {
     navigate('/login');
   };
 
+  // ---- Layer management ----
+  const editorArea = board?.areas.find((a) => a.id === editorAreaId);
+  const editorLayer = editorArea?.layers[editorLayerIndex];
+
+  const handleLayerRenamed = useCallback(
+    async (layerId: string, newLabel: string) => {
+      if (!board || !editorArea) return;
+      const area: Area = {
+        ...editorArea,
+        layers: editorArea.layers.map((l) => (l.id === layerId ? { ...l, label: newLabel } : l)),
+      };
+      setBoard({
+        ...board,
+        areas: board.areas.map((a) => (a.id === editorArea.id ? area : a)),
+      });
+      try {
+        await updateLayerContent(boardId!, editorArea.id, layerId,
+          editorArea.layers.find((l) => l.id === layerId)?.content ?? { stickyNotes: [], tables: [], drawings: [], timestamps: [] }
+        );
+      } catch { /* best-effort */ }
+    },
+    [board, editorArea, boardId, setBoard]
+  );
+
+  const handleLayerDeleted = useCallback(
+    async (layerId: string) => {
+      if (!board || !editorArea || editorArea.layers.length <= 1) return;
+      const area: Area = {
+        ...editorArea,
+        layers: editorArea.layers.filter((l) => l.id !== layerId),
+      };
+      const updatedBoard = {
+        ...board,
+        areas: board.areas.map((a) => (a.id === editorArea.id ? area : a)),
+      };
+      setBoard(updatedBoard);
+      setEditorLayerIndex(0);
+      // No dedicated delete-layer API; we update the area with new layers
+      try {
+        await updateArea(boardId!, editorArea.id, { layers: area.layers } as never);
+      } catch { /* best-effort */ }
+    },
+    [board, editorArea, boardId, setBoard]
+  );
+
+  const handleLayerReorder = useCallback(
+    async (fromIdx: number, toIdx: number) => {
+      if (!board || !editorArea) return;
+      const layers = [...editorArea.layers];
+      const [moved] = layers.splice(fromIdx, 1);
+      layers.splice(toIdx, 0, moved!);
+      const area: Area = { ...editorArea, layers };
+      setBoard({
+        ...board,
+        areas: board.areas.map((a) => (a.id === editorArea.id ? area : a)),
+      });
+      try {
+        await updateArea(boardId!, editorArea.id, { layers } as never);
+      } catch { /* best-effort */ }
+    },
+    [board, editorArea, boardId, setBoard]
+  );
+
+  const handleEditorOpen = useCallback(
+    (areaId: string, layerIdx = 0) => {
+      selectArea(areaId);
+      setEditorAreaId(areaId);
+      setEditorLayerIndex(layerIdx);
+    },
+    [selectArea]
+  );
+
   if (loading || !board) {
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Spin size="large" tip="加载画板中..." />
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lb-bg-deep)' }}>
+        <Spin size="large">
+          <div style={{ color: 'var(--lb-text-secondary)', marginTop: 16 }}>加载画板中...</div>
+        </Spin>
       </div>
     );
   }
@@ -176,14 +257,15 @@ export default function BoardPage() {
     <Layout style={{ height: '100vh' }}>
       <Header
         style={{
-          background: '#fff',
+          background: 'rgba(18, 18, 42, 0.85)',
+          backdropFilter: 'blur(20px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 20px',
           height: 60,
-          borderBottom: '1px solid #f0f0f0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          borderBottom: '1px solid rgba(124, 92, 252, 0.2)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
           zIndex: 20,
         }}
       >
@@ -193,8 +275,9 @@ export default function BoardPage() {
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/dashboard')}
+            style={{ color: '#e8e8f0' }}
           />
-          <span style={{ fontSize: 16, fontWeight: 600, color: '#2d3436' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: '#e8e8f0' }}>
             🎨 {board.name}
           </span>
         </Space>
@@ -229,7 +312,22 @@ export default function BoardPage() {
             </Button>
           </Dropdown>
 
-          <Tooltip title={viewMode === '2d' ? '切换到 3D 立体查看' : '切换到 2D 画板'}>
+          {selectedAreaId && (
+            <Tooltip title="层管理">
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => {
+                  setLayerManagerAreaId(selectedAreaId);
+                  setLayerManagerOpen(true);
+                }}
+                style={{ borderRadius: 8 }}
+              >
+                层管理
+              </Button>
+            </Tooltip>
+          )}
+
+          <Tooltip title={viewMode === '2d' ? '切换到 3D 沙盘' : '切换到平面总览'}>
             <Button
               icon={<BlockOutlined />}
               onClick={() => {
@@ -240,7 +338,7 @@ export default function BoardPage() {
               type={viewMode === '3d' ? 'primary' : 'default'}
               style={{ borderRadius: 8 }}
             >
-              {viewMode === '2d' ? '3D' : '2D'}
+              {viewMode === '2d' ? '3D 沙盘' : '平面总览'}
             </Button>
           </Tooltip>
 
@@ -266,7 +364,7 @@ export default function BoardPage() {
         </Space>
       </Header>
 
-      <Content style={{ position: 'relative', overflow: 'hidden' }}>
+      <Content style={{ position: 'relative', overflow: 'hidden', background: 'var(--lb-canvas-bg)' }}>
         {renderedView === '2d' ? (
           <>
             <InfiniteCanvas
@@ -288,11 +386,11 @@ export default function BoardPage() {
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                   textAlign: 'center',
-                  color: '#bfbfbf',
+                  color: 'var(--lb-text-muted)',
                   pointerEvents: 'none',
                 }}
               >
-                <AppstoreOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+                <AppstoreOutlined style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
                 <div style={{ fontSize: 16 }}>点击右上角「新建」创建小组和区域</div>
                 <div style={{ fontSize: 13, marginTop: 8 }}>先创建小组，再创建区域</div>
               </div>
@@ -304,6 +402,13 @@ export default function BoardPage() {
             onBack={() => {
               setViewMode('2d');
               setTransitioning(true);
+            }}
+            onSelectArea={(areaId) => {
+              handleEditorOpen(areaId, 0);
+            }}
+            onAddLayerToArea={(areaId) => {
+              handleAddLayer(areaId);
+              handleEditorOpen(areaId, (board?.areas.find((a) => a.id === areaId)?.layers.length ?? 1) - 1);
             }}
           />
         )}
@@ -380,6 +485,30 @@ export default function BoardPage() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Floating Editor */}
+      {editorArea && editorLayer && (
+        <FloatingEditor
+          open={!!editorAreaId}
+          areaName={editorArea.name}
+          layer={editorLayer}
+          onClose={() => { setEditorAreaId(null); }}
+          onSave={(content) => handleUpdateLayer(editorArea.id, editorLayer.id, content)}
+        />
+      )}
+
+      {/* Layer Manager */}
+      {layerManagerAreaId && board && (
+        <LayerManager
+          open={layerManagerOpen}
+          area={board.areas.find((a) => a.id === layerManagerAreaId)!}
+          onClose={() => { setLayerManagerOpen(false); setLayerManagerAreaId(null); }}
+          onLayerRenamed={handleLayerRenamed}
+          onLayerDeleted={handleLayerDeleted}
+          onLayerReorder={handleLayerReorder}
+          onAddLayer={() => handleAddLayer(layerManagerAreaId)}
+        />
+      )}
     </Layout>
   );
 }

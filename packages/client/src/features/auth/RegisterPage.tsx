@@ -35,22 +35,25 @@ export default function RegisterPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)',
+        background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a40 50%, #12122a 100%)',
       }}
     >
       <Card
         style={{
           width: 420,
           borderRadius: 16,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+          background: 'rgba(20,20,50,0.8)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(124,92,252,0.25)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
         }}
         styles={{ body: { padding: '40px 32px' } }}
       >
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2} style={{ color: '#6c5ce7', marginBottom: 8 }}>
+          <Title level={2} style={{ color: '#a78bfa', marginBottom: 8 }}>
             创建账号
           </Title>
-          <Text type="secondary">注册 LayerBoard 开始协作</Text>
+          <Text style={{ color: '#9a9ab8' }}>注册 LayerBoard 开始协作</Text>
         </div>
 
         <Form name="register" onFinish={onFinish} size="large" autoComplete="off">

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Stage, Layer } from 'react-konva';
 import type Konva from 'konva';
 import type { Board, Area, Layer as TLayer } from '@/types';
@@ -46,6 +46,34 @@ export default function InfiniteCanvas({
 
   const areas = board.areas || [];
 
+  // Smart initial zoom: fit all areas in viewport
+  useEffect(() => {
+    if (areas.length === 0 || !size.width || !size.height) return;
+    const bounds = areas.reduce(
+      (acc, area) => {
+        const r = area.position.x + area.size.width;
+        const b = area.position.y + area.size.height;
+        return {
+          minX: Math.min(acc.minX, area.position.x),
+          minY: Math.min(acc.minY, area.position.y),
+          maxX: Math.max(acc.maxX, r),
+          maxY: Math.max(acc.maxY, b),
+        };
+      },
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+    );
+    const totalW = bounds.maxX - bounds.minX + 200;
+    const totalH = bounds.maxY - bounds.minY + 200;
+    const fitScale = Math.min(size.width / totalW, size.height / totalH, 1.0) * 0.85;
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    setViewport({
+      x: size.width / 2 - centerX * fitScale,
+      y: size.height / 2 - centerY * fitScale,
+      scale: fitScale,
+    });
+  }, [areas.length]); // run once when areas change count
+
   // Determine group info per area
   const groupInfo = useMemo(() => {
     const map: Record<string, { name: string; color: string }> = {};
@@ -69,7 +97,12 @@ export default function InfiniteCanvas({
     <div
       ref={containerRef}
       className="canvas-container"
-      style={{ width: '100%', height: '100%', position: 'relative', background: '#e8ecf1' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        background: 'var(--lb-canvas-bg)',
+      }}
     >
       {/* Grid pattern background */}
       <div
@@ -77,10 +110,9 @@ export default function InfiniteCanvas({
           position: 'absolute',
           inset: 0,
           backgroundImage:
-            'radial-gradient(circle, #d0d5dd 1px, transparent 1px)',
+            'radial-gradient(circle, rgba(124,92,252,0.12) 1px, transparent 1px)',
           backgroundSize: `${24 * viewport.scale}px ${24 * viewport.scale}px`,
           backgroundPosition: `${viewport.x}px ${viewport.y}px`,
-          opacity: 0.5,
           pointerEvents: 'none',
         }}
       />
@@ -97,14 +129,12 @@ export default function InfiniteCanvas({
         onWheel={handleWheel}
         onDragEnd={handleDragEnd}
         onClick={(e) => {
-          // click on empty canvas deselects
           if (e.target === e.target.getStage()) {
             onSelectArea(null);
           }
         }}
       >
         <Layer>
-          {/* Render all areas */}
           {areas.map((area: Area) => {
             const grp = groupInfo[area.groupId];
             return (
@@ -128,7 +158,6 @@ export default function InfiniteCanvas({
             );
           })}
 
-          {/* Navigation arrows around the selected area */}
           {selectedAreaId && (
             <NavigationArrows
               areas={areas}
@@ -160,16 +189,14 @@ export default function InfiniteCanvas({
 
       {/* Scale indicator */}
       <div
+        className="glass-panel-sm"
         style={{
           position: 'absolute',
           bottom: 24,
           left: 24,
-          background: 'rgba(255,255,255,0.9)',
           padding: '4px 12px',
-          borderRadius: 8,
           fontSize: 12,
-          color: '#636e72',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          color: 'var(--lb-text-secondary)',
           zIndex: 10,
         }}
       >
@@ -180,29 +207,30 @@ export default function InfiniteCanvas({
         .zoom-btn {
           width: 40px;
           height: 40px;
-          border-radius: 8px;
-          border: 1px solid #e8e6ff;
-          background: rgba(255,255,255,0.95);
-          color: #6c5ce7;
+          border-radius: 10px;
+          border: 1px solid rgba(124,92,252,0.3);
+          background: rgba(20,20,50,0.7);
+          backdrop-filter: blur(12px);
+          color: var(--lb-accent-light);
           font-size: 18px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-          transition: all 0.15s;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+          transition: all 0.2s;
         }
         .zoom-btn:hover {
-          background: #6c5ce7;
+          background: var(--lb-accent);
           color: #fff;
           transform: translateY(-1px);
+          box-shadow: 0 4px 16px var(--lb-accent-glow);
         }
       `}</style>
     </div>
   );
 }
 
-// Unused but exported for future area auto-layout
 export function computeAreaPosition(index: number): { x: number; y: number } {
   return { x: (index % 4) * AREA_SPACING, y: Math.floor(index / 4) * AREA_SPACING };
 }

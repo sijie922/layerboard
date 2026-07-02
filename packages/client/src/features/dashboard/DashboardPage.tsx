@@ -96,17 +96,18 @@ export default function DashboardPage() {
     <Layout style={{ height: '100vh' }}>
       <Header
         style={{
-          background: '#fff',
+          background: 'rgba(18,18,42,0.85)',
+          backdropFilter: 'blur(20px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 32px',
-          borderBottom: '1px solid #f0f0f0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          borderBottom: '1px solid rgba(124,92,252,0.2)',
+          boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Title level={4} style={{ color: '#6c5ce7', margin: 0 }}>
+          <Title level={4} style={{ color: '#a78bfa', margin: 0 }}>
             🎨 LayerBoard
           </Title>
         </div>
@@ -132,10 +133,10 @@ export default function DashboardPage() {
         </Space>
       </Header>
 
-      <Content style={{ padding: '32px', overflow: 'auto' }}>
+      <Content style={{ padding: '32px', overflow: 'auto', background: 'var(--lb-bg-deep)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <Title level={3} style={{ margin: 0 }}>
+            <Title level={3} style={{ margin: 0, color: 'var(--lb-text-primary)' }}>
               我的画板
             </Title>
             <Button
@@ -168,7 +169,9 @@ export default function DashboardPage() {
                       borderRadius: 12,
                       overflow: 'hidden',
                       cursor: 'pointer',
-                      border: '1px solid #e8e6ff',
+                      background: 'rgba(22,22,50,0.8)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(124,92,252,0.2)',
                     }}
                     styles={{
                       body: { padding: 20 },
@@ -185,7 +188,7 @@ export default function DashboardPage() {
                     <div
                       style={{
                         height: 120,
-                        background: 'linear-gradient(135deg, #f8f7ff 0%, #e8e6ff 100%)',
+                        background: 'linear-gradient(135deg, rgba(124,92,252,0.15) 0%, rgba(108,92,231,0.05) 100%)',
                         borderRadius: 8,
                         marginBottom: 16,
                         display: 'flex',
@@ -195,10 +198,10 @@ export default function DashboardPage() {
                     >
                       <Text style={{ fontSize: 32 }}>🎨</Text>
                     </div>
-                    <Title level={5} style={{ margin: '0 0 8px 0' }}>
+                    <Title level={5} style={{ margin: '0 0 8px 0', color: 'var(--lb-text-primary)' }}>
                       {board.name}
                     </Title>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
+                    <Text style={{ fontSize: 12, color: 'var(--lb-text-muted)' }}>
                       {Array.isArray(board.members) ? board.members.length : 0} 位成员
                       {' · '}
                       {Array.isArray(board.groups) ? board.groups.length : 0} 个小组
